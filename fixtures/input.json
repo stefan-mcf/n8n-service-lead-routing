@@ -1,0 +1,67 @@
+{
+  "leads": [
+    {
+      "event_id": "LEAD-1001",
+      "first_name": "Ava",
+      "last_name": "Nguyen",
+      "email": "ava@example.test",
+      "phone": "0400 111 222",
+      "service": "roof inspection",
+      "postcode": "3070",
+      "preferred_date": "2026-08-04",
+      "consent_to_contact": true,
+      "source": "website_quote_form"
+    },
+    {
+      "event_id": "LEAD-1002",
+      "first_name": "Ava",
+      "last_name": "Nguyen",
+      "email": "AVA@example.test",
+      "phone": "0400 111 222",
+      "service": "roof inspection",
+      "postcode": "3070",
+      "preferred_date": "2026-08-04",
+      "consent_to_contact": true,
+      "source": "website_quote_form"
+    },
+    {
+      "event_id": "LEAD-1003",
+      "first_name": "Noah",
+      "last_name": "Patel",
+      "email": "",
+      "phone": "",
+      "service": "deck repair",
+      "postcode": "3216",
+      "preferred_date": "2026-08-06",
+      "consent_to_contact": false,
+      "source": "website_quote_form"
+    },
+    {
+      "event_id": "LEAD-1004",
+      "first_name": "Mia",
+      "last_name": "Jones",
+      "email": "",
+      "phone": "0412 333 444",
+      "service": "switchboard replacement",
+      "postcode": "3550",
+      "preferred_date": "",
+      "consent_to_contact": true,
+      "source": "phone_intake",
+      "human_review_required": true,
+      "review_reason": "Confirm licensed-trade scope and scheduling requirements."
+    },
+    {
+      "event_id": "LEAD-1005",
+      "first_name": "Leo",
+      "last_name": "Martin",
+      "email": "leo@example.test",
+      "phone": "",
+      "service": "gutter replacement",
+      "postcode": "3350",
+      "preferred_date": "2026-08-08",
+      "consent_to_contact": true,
+      "source": "partner_referral",
+      "simulate_adapter_failure": true
+    }
+  ]
+}

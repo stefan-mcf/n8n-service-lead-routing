@@ -1,0 +1,82 @@
+{
+  "outcomes": [
+    {
+      "event_id": "LEAD-1001",
+      "correlation_id": "lead-1001",
+      "duplicate_key": "ava@example.test|roof inspection",
+      "outcome": "accepted",
+      "errors": [],
+      "review_reason": null,
+      "crm_action": "prepare_create",
+      "booking_action": "prepare_proposal",
+      "acknowledgement_action": "preview_only",
+      "retry_allowed": false,
+      "external_actions_performed": false
+    },
+    {
+      "event_id": "LEAD-1002",
+      "correlation_id": "lead-1002",
+      "duplicate_key": "ava@example.test|roof inspection",
+      "outcome": "duplicate",
+      "errors": [],
+      "review_reason": null,
+      "crm_action": "none",
+      "booking_action": "none",
+      "acknowledgement_action": "none",
+      "retry_allowed": false,
+      "external_actions_performed": false
+    },
+    {
+      "event_id": "LEAD-1003",
+      "correlation_id": "lead-1003",
+      "duplicate_key": "no-contact|deck repair",
+      "outcome": "invalid",
+      "errors": [
+        "email_or_phone_required",
+        "contact_consent_required"
+      ],
+      "review_reason": null,
+      "crm_action": "none",
+      "booking_action": "none",
+      "acknowledgement_action": "none",
+      "retry_allowed": false,
+      "external_actions_performed": false
+    },
+    {
+      "event_id": "LEAD-1004",
+      "correlation_id": "lead-1004",
+      "duplicate_key": "0412333444|switchboard replacement",
+      "outcome": "human_review",
+      "errors": [],
+      "review_reason": "Confirm licensed-trade scope and scheduling requirements.",
+      "crm_action": "hold",
+      "booking_action": "hold",
+      "acknowledgement_action": "preview_only",
+      "retry_allowed": false,
+      "external_actions_performed": false
+    },
+    {
+      "event_id": "LEAD-1005",
+      "correlation_id": "lead-1005",
+      "duplicate_key": "leo@example.test|gutter replacement",
+      "outcome": "integration_exception",
+      "errors": [
+        "destination_adapter_unavailable"
+      ],
+      "review_reason": "Review destination availability before any retry.",
+      "crm_action": "blocked",
+      "booking_action": "blocked",
+      "acknowledgement_action": "none",
+      "retry_allowed": false,
+      "external_actions_performed": false
+    }
+  ],
+  "summary": {
+    "accepted": 1,
+    "duplicate": 1,
+    "invalid": 1,
+    "human_review": 1,
+    "integration_exception": 1,
+    "external_actions_performed": 0
+  }
+}
