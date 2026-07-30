@@ -17,4 +17,3 @@ jobs:
         with:
           node-version: 24
       - run: node scripts/validate-workflow.mjs
-
