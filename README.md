@@ -1,100 +1,106 @@
-# n8n Service Lead Routing
+# n8n Service Enquiry Intake and Routing
 
-A 16-node n8n workflow for validating service enquiries, separating duplicates and exceptions, and preparing clean CRM, booking and acknowledgement handoffs.
+An inactive, import-tested n8n system for structured quote intake, persistent
+duplicate control, human review, exception holds, and recorded operator
+outcomes.
 
 | | |
 | --- | --- |
-| Status | Built and import-tested |
-| Role | Workflow design, routing logic, test scenarios and operator handoff |
-| Stack | n8n, JavaScript, JSON workflow contracts |
+| Status | Provider-verified in an isolated local n8n 2.31.6 instance; inactive |
+| Role | Workflow design, form intake, routing controls, QA scenarios, and operator handoff |
+| Stack | n8n Form Trigger, Data Tables, Wait forms, JavaScript, JSON contracts |
 | Project page | [smsystems.au/work/n8n-service-lead-routing](https://smsystems.au/work/n8n-service-lead-routing/) |
+
+![Customer-facing service enquiry form](assets/customer-intake.png)
 
 ## Routing model
 
-The workflow accepts a service enquiry through either a webhook or a manual review run. It normalises contact details and service data before sending the record through five explicit outcomes:
+The 20-node main workflow captures a service enquiry through a structured n8n
+form, normalises the record, checks a local enquiry register, and routes it to
+one of five explicit outcomes before any external handoff is prepared.
+
+![Readable map of the current n8n workflow](assets/routing-workflow.svg)
 
 | Outcome | Treatment |
 | --- | --- |
-| Accepted | Prepare CRM record, proposed booking and acknowledgement preview |
-| Duplicate | Stop further preparation and retain the matching key |
-| Invalid | Record missing contact, consent or service fields |
-| Human review | Hold CRM and booking actions with a review reason |
-| Integration exception | Block downstream preparation and record the adapter failure |
+| Accepted | Prepare CRM, booking, and acknowledgement handoffs for human confirmation |
+| Duplicate | Stop a repeated contact-and-service combination |
+| Invalid | Record missing contact or consent details |
+| Human review | Pause regulated or unclear work for an explicit decision |
+| Integration exception | Hold a simulated destination failure for review |
 
-```text
-webhook or manual batch
-          │
-          ▼
-normalise and classify
-          │
-          ▼
-invalid ─ duplicate ─ human review ─ integration exception
-                                             │
-                                             ▼
-                                 CRM and booking preparation
-                                             │
-                                             ▼
-                                       audit outcome
-```
+Every outcome is written to the local `Service Enquiry Register` with
+`external_actions_performed: false`.
 
-![Complete n8n workflow](assets/workflow-overview.png)
+## Provider-native evidence
 
-## Workflow decisions
+The readable map above is derived from the committed workflow so its labels
+remain clear at portfolio size. The corresponding provider-native n8n canvas
+capture is retained below for implementation evidence.
 
-### Validation runs before handoff
+![Provider-native n8n workflow canvas](assets/native-workflow-canvas.png)
 
-Contact method, service, location and consent are checked before the workflow prepares a CRM record or booking.
+The controlled proof run also produced an operator register with exactly one
+accepted, duplicate, invalid, human-review, and integration-exception row, plus
+a completed Wait-node review form path.
 
-### Duplicate handling uses a stable business key
+![Service Enquiry Register](assets/operator-register.png)
 
-Email or normalised phone is combined with the service type. A second event with the same key follows the duplicate route instead of creating another handoff.
+![Human review form](assets/human-review.png)
 
-### Human review is separate from invalid data
+## Included workflows
 
-A complete record can still require judgment. Licensed-trade scope, scheduling ambiguity or another operating concern can hold the record without treating it as malformed.
+- [`workflow/workflow.json`](workflow/workflow.json) — the inactive 20-node
+  customer-intake and routing workflow;
+- [`workflow/qa-workflow.json`](workflow/qa-workflow.json) — the inactive
+  15-node five-scenario QA harness;
+- [`workflow/data-table-schema.json`](workflow/data-table-schema.json) — the
+  local operator-register schema.
 
-### External actions remain disabled
-
-The included workflow prepares destination-shaped data but does not send acknowledgements, create bookings or write to a CRM. Those adapters require separate credentials and an approved activation step.
-
-![Validation and routing logic](assets/validation-logic.png)
-
-![Invalid enquiry output](assets/invalid-lead-output.png)
+The node counts include layout notes. Neither workflow contains credentials or
+external provider nodes. Data Table identifiers belong to the isolated local
+proof instance and must be relinked after import into another n8n instance.
 
 ## Included scenarios
 
-The committed fixture runs one record through each outcome:
+The committed fixture covers:
 
-- accepted website enquiry;
-- duplicate submission with case-normalised email;
+- an accepted website enquiry;
+- a duplicate submission with case-normalised email;
 - missing contact method and consent;
-- complete enquiry requiring human review;
-- simulated destination-adapter failure.
+- a complete enquiry requiring human review;
+- a simulated destination-adapter failure.
 
-The expected output records correlation IDs, duplicate keys, route decisions, prepared actions and whether any external action occurred.
+The expected output records correlation IDs, duplicate keys, route decisions,
+prepared actions, and whether any external action occurred.
 
 ## Validate and import
 
-Check the workflow and fixtures:
+Run the structural and claim-boundary checks:
 
 ```bash
 node scripts/validate-workflow.mjs
 ```
 
-Import [`workflow/workflow.json`](workflow/workflow.json) through the n8n workflow import screen. It is intentionally inactive and contains no credentials.
+Import the two workflow JSON files through the n8n workflow import screen,
+create or relink the local Data Table from the supplied schema, and keep both
+workflows inactive until destination adapters and readback checks are approved.
 
-## Result
+## Safety boundary
 
-The workflow makes the non-happy paths visible in the canvas and in its output contract. An operator can see whether a lead was accepted, rejected, duplicated, held for review or blocked by an integration before a destination system is changed.
+This repository proves an isolated local implementation and controlled
+synthetic executions. It does not claim a production deployment, live CRM or
+calendar writes, customer data, external messages, client delivery, lead
+growth, or ROI.
 
 ## Repository contents
 
 ```text
-workflow/        importable n8n workflow
+workflow/        inactive main workflow, QA workflow, and Data Table schema
 fixtures/        five controlled input and expected-output records
-scripts/         structural validator
-assets/          selected n8n implementation screens
-docs/            node and activation notes
+scripts/         structural and safety-boundary validator
+assets/          matched case-study visuals and native n8n evidence
+docs/            architecture and activation notes
 ```
 
 [Node map and activation notes](docs/architecture.md)

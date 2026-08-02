@@ -1,127 +1,358 @@
 {
-  "id": "SLN8N26072600001",
-  "name": "Service Lead to Booked Job",
+  "name": "Service Lead Intake and Routing",
   "active": false,
-  "versionId": "3f5329e4-b436-452e-8a18-dd6a57b70c16",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "proof_mode": "inactive_synthetic_v2",
+    "workflow_activation_blocked": true,
+    "external_actions_blocked": true,
+    "email_sends_blocked": true,
+    "sms_sends_blocked": true,
+    "crm_writes_blocked": true,
+    "calendar_writes_blocked": true,
+    "data_table_scope": "local_synthetic_only"
+  },
+  "pinData": {},
   "nodes": [
     {
-      "id": "manual-trigger",
-      "name": "Start Review Run",
-      "type": "n8n-nodes-base.manualTrigger",
+      "id": "customer-intake-note",
+      "name": "Customer intake",
+      "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1040,
-        100
+        -1120,
+        -320
       ],
-      "parameters": {}
-    },
-    {
-      "id": "webhook-trigger",
-      "name": "Receive Service Lead",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [
-        -1040,
-        -140
-      ],
-      "webhookId": "0d7544d4-1338-4d74-af4e-157518f3cb61",
       "parameters": {
-        "httpMethod": "POST",
-        "path": "service-lead-intake",
-        "responseMode": "onReceived"
+        "content": "## CUSTOMER INTAKE\nA branded service request form captures structured, consented enquiry details.",
+        "height": 440,
+        "width": 500,
+        "color": 5
       }
     },
     {
-      "id": "load-lead-batch",
-      "name": "Load Lead Batch",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "id": "routing-controls-note",
+      "name": "Routing controls",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
       "position": [
-        -800,
-        100
+        -580,
+        -520
       ],
       "parameters": {
-        "jsCode": "return [\n  { json: { event_id: 'LEAD-1001', first_name: 'Ava', last_name: 'Nguyen', email: 'ava@example.test', phone: '0400 111 222', service: 'roof inspection', postcode: '3070', preferred_date: '2026-08-04', consent_to_contact: true, source: 'website_quote_form' } },\n  { json: { event_id: 'LEAD-1002', first_name: 'Ava', last_name: 'Nguyen', email: 'AVA@example.test', phone: '0400 111 222', service: 'roof inspection', postcode: '3070', preferred_date: '2026-08-04', consent_to_contact: true, source: 'website_quote_form' } },\n  { json: { event_id: 'LEAD-1003', first_name: 'Noah', last_name: 'Patel', email: '', phone: '', service: 'deck repair', postcode: '3216', preferred_date: '2026-08-06', consent_to_contact: false, source: 'website_quote_form' } },\n  { json: { event_id: 'LEAD-1004', first_name: 'Mia', last_name: 'Jones', email: '', phone: '0412 333 444', service: 'switchboard replacement', postcode: '3550', preferred_date: '', consent_to_contact: true, source: 'phone_intake', human_review_required: true, review_reason: 'Confirm licensed-trade scope and scheduling requirements.' } },\n  { json: { event_id: 'LEAD-1005', first_name: 'Leo', last_name: 'Martin', email: 'leo@example.test', phone: '', service: 'gutter replacement', postcode: '3350', preferred_date: '2026-08-08', consent_to_contact: true, source: 'partner_referral', simulate_adapter_failure: true } }\n];"
+        "content": "## VALIDATION + ROUTING\nRequired fields, persistent duplicate checks, human review, and exception holds.",
+        "height": 1000,
+        "width": 1280,
+        "color": 7
       }
     },
     {
-      "id": "normalize-classify",
-      "name": "Normalize and Classify",
+      "id": "controlled-handoff-note",
+      "name": "Controlled handoff",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        720,
+        -420
+      ],
+      "parameters": {
+        "content": "## CONTROLLED HANDOFF\nEvery outcome is written to an operator register. External CRM, booking, and acknowledgement actions remain previews.",
+        "height": 680,
+        "width": 1040,
+        "color": 4
+      }
+    },
+    {
+      "id": "service-request-form",
+      "name": "Request a Service Quote",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -1040,
+        -40
+      ],
+      "webhookId": "service-lead-quote-request-v2",
+      "parameters": {
+        "authentication": "none",
+        "formTitle": "Request a service quote",
+        "formDescription": "Tell us what you need and when. Your request will be checked before any booking or follow-up is prepared.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Your name",
+              "fieldName": "customer_name",
+              "fieldType": "text",
+              "placeholder": "e.g. Ava Nguyen",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldName": "email",
+              "fieldType": "email",
+              "placeholder": "you@example.com"
+            },
+            {
+              "fieldLabel": "Phone",
+              "fieldName": "phone",
+              "fieldType": "text",
+              "placeholder": "0400 000 000"
+            },
+            {
+              "fieldLabel": "Service needed",
+              "fieldName": "service",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Roof inspection"
+                  },
+                  {
+                    "option": "Deck repair"
+                  },
+                  {
+                    "option": "Electrical / regulated trade"
+                  },
+                  {
+                    "option": "Gutter replacement"
+                  },
+                  {
+                    "option": "Other"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Postcode",
+              "fieldName": "postcode",
+              "fieldType": "text",
+              "placeholder": "e.g. 3070",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Preferred date",
+              "fieldName": "preferred_date",
+              "fieldType": "date"
+            },
+            {
+              "fieldLabel": "Project details",
+              "fieldName": "project_details",
+              "fieldType": "textarea",
+              "placeholder": "Briefly describe the work, access, and any timing constraints.",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Contact consent",
+              "fieldName": "consent_to_contact",
+              "fieldType": "checkbox",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "I agree to be contacted about this request."
+                  }
+                ]
+              },
+              "limitSelection": "exact",
+              "numberOfSelections": 1,
+              "requiredField": true
+            },
+            {
+              "fieldName": "source",
+              "fieldType": "hiddenField",
+              "fieldValue": "website_quote_form"
+            }
+          ]
+        },
+        "responseMode": "onReceived",
+        "options": {
+          "appendAttribution": false,
+          "buttonLabel": "Send quote request",
+          "path": "request-a-service-quote",
+          "respondWithOptions": {
+            "values": {
+              "respondWith": "text",
+              "formSubmittedText": "Thanks — your request has been received for review."
+            }
+          },
+          "customCss": ":root {\n  --font-family: Arial, Helvetica, sans-serif;\n  --font-weight-normal: 400;\n  --font-weight-bold: 700;\n  --font-size-body: 14px;\n  --font-size-label: 14px;\n  --font-size-input: 15px;\n  --font-size-header: 32px;\n  --font-size-paragraph: 15px;\n  --font-size-subheader: 15px;\n  --color-background: #e9edef;\n  --color-card-bg: #f8f9f9;\n  --color-card-border: #b9c1c5;\n  --color-card-shadow: rgba(24, 32, 36, 0.14);\n  --color-header: #111618;\n  --color-header-subtext: #4f595e;\n  --color-label: #20272a;\n  --color-input-border: #aab3b7;\n  --color-input-text: #20272a;\n  --color-focus-border: #386e86;\n  --color-submit-btn-bg: #151a1c;\n  --color-submit-btn-text: #ffffff;\n  --color-required: #b84532;\n  --border-radius-card: 1px;\n  --border-radius-input: 1px;\n  --padding-container-top: 30px;\n  --padding-card: 30px;\n  --padding-form-input: 12px;\n  --container-width: 680px;\n  --submit-btn-height: 52px;\n  --box-shadow-card: 8px 8px 0 rgba(56, 110, 134, 0.14);\n}\nbody { background-image: linear-gradient(rgba(56,110,134,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(56,110,134,.06) 1px, transparent 1px); background-size: 36px 36px; }\nform { letter-spacing: .01em; }\nbutton[type='submit'] { text-transform: uppercase; letter-spacing: .14em; font-weight: 700; border: 1px solid #060809; box-shadow: inset 0 1px rgba(255,255,255,.28), 3px 3px 0 rgba(56,110,134,.2); }\nlabel { font-weight: 700; }\ninput, textarea, select { background: #ffffff; }\n"
+        }
+      }
+    },
+    {
+      "id": "normalize-intake",
+      "name": "Normalize Intake",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -540,
-        0
+        -760,
+        -40
       ],
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const input = $input.all();\nconst seen = new Set();\nreturn input.map((item) => {\n  const raw = item.json;\n  const text = (value) => String(value ?? '').trim();\n  const email = text(raw.email).toLowerCase();\n  const phone = text(raw.phone).replace(/\\D/g, '');\n  const service = text(raw.service).toLowerCase();\n  const eventId = text(raw.event_id);\n  const contactKey = email || phone || 'no-contact';\n  const duplicateKey = `${contactKey}|${service || 'no-service'}`;\n  const errors = [];\n  if (!eventId) errors.push('event_id_required');\n  if (!email && !phone) errors.push('email_or_phone_required');\n  if (!service) errors.push('service_required');\n  if (!Boolean(raw.consent_to_contact)) errors.push('contact_consent_required');\n  let outcome;\n  if (errors.length) outcome = 'invalid';\n  else if (seen.has(duplicateKey)) outcome = 'duplicate';\n  else {\n    seen.add(duplicateKey);\n    if (Boolean(raw.human_review_required)) outcome = 'human_review';\n    else if (Boolean(raw.simulate_adapter_failure)) outcome = 'integration_exception';\n    else outcome = 'accepted';\n  }\n  return {\n    json: {\n      ...raw,\n      email,\n      phone,\n      service,\n      correlation_id: eventId.toLowerCase().replaceAll('_', '-'),\n      duplicate_key: duplicateKey,\n      outcome,\n      errors,\n      is_invalid: outcome === 'invalid',\n      is_duplicate: outcome === 'duplicate',\n      needs_human_review: outcome === 'human_review',\n      has_integration_exception: outcome === 'integration_exception',\n      external_actions_performed: false\n    }\n  };\n});"
+        "jsCode": "const raw = $json;\nconst text = (value) => String(value ?? '').trim();\nconst email = text(raw.email).toLowerCase();\nconst phone = text(raw.phone).replace(/\\D/g, '');\nconst service = text(raw.service).toLowerCase();\nconst customerName = text(raw.customer_name);\nconst eventId = text(raw.event_id) || `FORM-${Date.now()}`;\nconst consentRaw = raw.consent_to_contact;\nconst consent = Array.isArray(consentRaw) ? consentRaw.length > 0 : Boolean(consentRaw);\nconst errors = [];\nif (!customerName) errors.push('customer_name_required');\nif (!email && !phone) errors.push('email_or_phone_required');\nif (!service) errors.push('service_required');\nif (!text(raw.postcode)) errors.push('postcode_required');\nif (!consent) errors.push('contact_consent_required');\nconst contactKey = email || phone || 'no-contact';\nreturn [{ json: {\n  ...raw,\n  event_id: eventId,\n  customer_name: customerName,\n  email,\n  phone,\n  service,\n  source: text(raw.source) || 'website_quote_form',\n  correlation_id: eventId.toLowerCase(),\n  duplicate_key: `${contactKey}|${service || 'no-service'}`,\n  errors,\n  is_invalid: errors.length > 0,\n  needs_human_review: service.includes('electrical') || service.includes('regulated'),\n  has_integration_exception: Boolean(raw.simulate_adapter_failure),\n  external_actions_performed: false\n} }];"
       }
     },
     {
       "id": "invalid-router",
-      "name": "Invalid Lead?",
+      "name": "Valid enquiry?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -280,
-        0
+        -500,
+        -40
       ],
       "parameters": {
         "conditions": {
           "boolean": [
             {
               "value1": "={{ $json.is_invalid }}",
-              "value2": true
+              "value2": false
             }
           ]
         }
       }
     },
     {
-      "id": "record-invalid",
-      "name": "Record Invalid Lead",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "id": "mark-invalid",
+      "name": "Reject Incomplete Enquiry",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
       "position": [
-        0,
-        -260
+        -240,
+        -300
       ],
       "parameters": {
-        "jsCode": "return $input.all().map(item => ({ json: { ...item.json, review_reason: null, crm_action: 'none', booking_action: 'none', acknowledgement_action: 'none', retry_allowed: false, terminal_state: 'rejected', external_actions_performed: false } }));"
-      }
-    },
-    {
-      "id": "duplicate-router",
-      "name": "Duplicate Lead?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [
-        0,
-        40
-      ],
-      "parameters": {
-        "conditions": {
-          "boolean": [
+        "assignments": {
+          "assignments": [
             {
-              "value1": "={{ $json.is_duplicate }}",
-              "value2": true
+              "id": "invalid-outcome",
+              "name": "outcome",
+              "value": "invalid",
+              "type": "string"
+            },
+            {
+              "id": "invalid-state",
+              "name": "terminal_state",
+              "value": "rejected",
+              "type": "string"
+            },
+            {
+              "id": "invalid-reason",
+              "name": "review_reason",
+              "value": "={{ $json.errors.join(', ') }}",
+              "type": "string"
+            },
+            {
+              "id": "invalid-external",
+              "name": "external_actions_performed",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "existing-enquiry",
+      "name": "Existing Enquiry?",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -240,
+        -40
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "rowExists",
+        "dataTableId": {
+          "__rl": true,
+          "value": "VfbTfZxkJAk3ZxvW",
+          "mode": "id"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "duplicate_key",
+              "condition": "eq",
+              "keyValue": "={{ $json.duplicate_key }}"
             }
           ]
         }
       }
     },
     {
-      "id": "record-duplicate",
-      "name": "Record Duplicate",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "id": "new-enquiry",
+      "name": "New Enquiry?",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
       "position": [
-        280,
-        -140
+        -240,
+        180
       ],
       "parameters": {
-        "jsCode": "return $input.all().map(item => ({ json: { ...item.json, review_reason: null, crm_action: 'none', booking_action: 'none', acknowledgement_action: 'none', retry_allowed: false, terminal_state: 'duplicate_stopped', external_actions_performed: false } }));"
+        "resource": "row",
+        "operation": "rowNotExists",
+        "dataTableId": {
+          "__rl": true,
+          "value": "VfbTfZxkJAk3ZxvW",
+          "mode": "id"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "duplicate_key",
+              "condition": "eq",
+              "keyValue": "={{ $json.duplicate_key }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "mark-duplicate",
+      "name": "Stop Duplicate",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        20,
+        -100
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "duplicate-outcome",
+              "name": "outcome",
+              "value": "duplicate",
+              "type": "string"
+            },
+            {
+              "id": "duplicate-state",
+              "name": "terminal_state",
+              "value": "duplicate_stopped",
+              "type": "string"
+            },
+            {
+              "id": "duplicate-reason",
+              "name": "review_reason",
+              "value": "Existing contact and service combination found in the enquiry register.",
+              "type": "string"
+            },
+            {
+              "id": "duplicate-external",
+              "name": "external_actions_performed",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
       }
     },
     {
@@ -130,8 +361,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        280,
-        100
+        20,
+        180
       ],
       "parameters": {
         "conditions": {
@@ -147,24 +378,239 @@
     {
       "id": "queue-review",
       "name": "Queue Human Review",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
       "position": [
-        560,
+        280,
         -20
       ],
       "parameters": {
-        "jsCode": "return $input.all().map(item => ({ json: { ...item.json, review_reason: item.json.review_reason || 'Human review required before downstream preparation.', crm_action: 'hold', booking_action: 'hold', acknowledgement_action: 'preview_only', retry_allowed: false, terminal_state: 'review_hold', external_actions_performed: false } }));"
+        "assignments": {
+          "assignments": [
+            {
+              "id": "review-outcome",
+              "name": "outcome",
+              "value": "human_review",
+              "type": "string"
+            },
+            {
+              "id": "review-state",
+              "name": "terminal_state",
+              "value": "review_hold",
+              "type": "string"
+            },
+            {
+              "id": "review-reason",
+              "name": "review_reason",
+              "value": "Confirm regulated-trade scope and scheduling requirements before handoff.",
+              "type": "string"
+            },
+            {
+              "id": "review-external",
+              "name": "external_actions_performed",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
       }
     },
     {
-      "id": "exception-router",
-      "name": "Integration Exception?",
+      "id": "wait-for-review",
+      "name": "Review Service Enquiry",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        -300
+      ],
+      "webhookId": "service-enquiry-human-review-v2",
+      "parameters": {
+        "resume": "form",
+        "incomingAuthentication": "none",
+        "formTitle": "Review service enquiry",
+        "formDescription": "Check the scope and decide whether this enquiry is ready for a controlled handoff.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Review decision",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Approve handoff"
+                  },
+                  {
+                    "option": "Hold for clarification"
+                  },
+                  {
+                    "option": "Reject enquiry"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Reviewer notes",
+              "fieldType": "textarea",
+              "placeholder": "Record the reason for the decision.",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "onReceived",
+        "limitWaitTime": true,
+        "limitType": "afterTimeInterval",
+        "resumeAmount": 7,
+        "resumeUnit": "days",
+        "options": {
+          "appendAttribution": false,
+          "respondWithOptions": {
+            "values": {
+              "respondWith": "text",
+              "formSubmittedText": "Review decision recorded."
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "apply-review",
+      "name": "Apply Review Decision",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1060,
+        -300
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "review-event",
+              "name": "event_id",
+              "value": "={{ $('Queue Human Review').item.json.event_id }}",
+              "type": "string"
+            },
+            {
+              "id": "review-name",
+              "name": "customer_name",
+              "value": "={{ $('Queue Human Review').item.json.customer_name }}",
+              "type": "string"
+            },
+            {
+              "id": "review-service",
+              "name": "service",
+              "value": "={{ $('Queue Human Review').item.json.service }}",
+              "type": "string"
+            },
+            {
+              "id": "review-postcode",
+              "name": "postcode",
+              "value": "={{ $('Queue Human Review').item.json.postcode }}",
+              "type": "string"
+            },
+            {
+              "id": "review-outcome-final",
+              "name": "outcome",
+              "value": "={{ $json['Review decision'] === 'Approve handoff' ? 'accepted' : ($json['Review decision'] === 'Reject enquiry' ? 'invalid' : 'human_review') }}",
+              "type": "string"
+            },
+            {
+              "id": "review-state-final",
+              "name": "terminal_state",
+              "value": "={{ $json['Review decision'] === 'Approve handoff' ? 'prepared_for_human_confirmation' : ($json['Review decision'] === 'Reject enquiry' ? 'rejected' : 'review_hold') }}",
+              "type": "string"
+            },
+            {
+              "id": "review-source",
+              "name": "source",
+              "value": "={{ $('Queue Human Review').item.json.source }}",
+              "type": "string"
+            },
+            {
+              "id": "review-key",
+              "name": "duplicate_key",
+              "value": "={{ $('Queue Human Review').item.json.duplicate_key }}",
+              "type": "string"
+            },
+            {
+              "id": "review-notes",
+              "name": "review_reason",
+              "value": "={{ $json['Reviewer notes'] }}",
+              "type": "string"
+            },
+            {
+              "id": "review-external-final",
+              "name": "external_actions_performed",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "update-review-outcome",
+      "name": "Update Review Outcome",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1320,
+        -300
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "VfbTfZxkJAk3ZxvW",
+          "mode": "id"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "event_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.event_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{ $json.event_id }}",
+            "customer_name": "={{ $json.customer_name }}",
+            "service": "={{ $json.service }}",
+            "postcode": "={{ $json.postcode }}",
+            "outcome": "={{ $json.outcome }}",
+            "terminal_state": "={{ $json.terminal_state }}",
+            "source": "={{ $json.source }}",
+            "duplicate_key": "={{ $json.duplicate_key }}",
+            "review_reason": "={{ $json.review_reason }}",
+            "external_actions_performed": "={{ $json.external_actions_performed }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "integration-router",
+      "name": "Integration Hold?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        560,
-        180
+        280,
+        240
       ],
       "parameters": {
         "conditions": {
@@ -178,143 +624,286 @@
       }
     },
     {
-      "id": "record-exception",
-      "name": "Record Integration Exception",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "id": "mark-exception",
+      "name": "Hold Integration Exception",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
       "position": [
-        840,
+        420,
+        120
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "exception-outcome",
+              "name": "outcome",
+              "value": "integration_exception",
+              "type": "string"
+            },
+            {
+              "id": "exception-state",
+              "name": "terminal_state",
+              "value": "exception_hold",
+              "type": "string"
+            },
+            {
+              "id": "exception-reason",
+              "name": "review_reason",
+              "value": "Destination adapter unavailable. Review before any retry.",
+              "type": "string"
+            },
+            {
+              "id": "exception-external",
+              "name": "external_actions_performed",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "prepare-handoff",
+      "name": "Prepare Controlled Handoff",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        420,
+        220
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "accepted-outcome",
+              "name": "outcome",
+              "value": "accepted",
+              "type": "string"
+            },
+            {
+              "id": "accepted-state",
+              "name": "terminal_state",
+              "value": "prepared_for_human_confirmation",
+              "type": "string"
+            },
+            {
+              "id": "accepted-reason",
+              "name": "review_reason",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "crm-preview",
+              "name": "crm_action",
+              "value": "prepare_create",
+              "type": "string"
+            },
+            {
+              "id": "booking-preview",
+              "name": "booking_action",
+              "value": "prepare_proposal",
+              "type": "string"
+            },
+            {
+              "id": "ack-preview",
+              "name": "acknowledgement_action",
+              "value": "preview_only",
+              "type": "string"
+            },
+            {
+              "id": "accepted-external",
+              "name": "external_actions_performed",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "prepare-register-row",
+      "name": "Prepare Register Row",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        800,
         80
       ],
       "parameters": {
-        "jsCode": "return $input.all().map(item => ({ json: { ...item.json, errors: ['destination_adapter_unavailable'], review_reason: 'Review destination availability before any retry.', crm_action: 'blocked', booking_action: 'blocked', acknowledgement_action: 'none', retry_allowed: false, terminal_state: 'exception_hold', external_actions_performed: false } }));"
+        "assignments": {
+          "assignments": [
+            {
+              "id": "register-event",
+              "name": "event_id",
+              "value": "={{ $json.event_id }}",
+              "type": "string"
+            },
+            {
+              "id": "register-name",
+              "name": "customer_name",
+              "value": "={{ $json.customer_name }}",
+              "type": "string"
+            },
+            {
+              "id": "register-service",
+              "name": "service",
+              "value": "={{ $json.service }}",
+              "type": "string"
+            },
+            {
+              "id": "register-postcode",
+              "name": "postcode",
+              "value": "={{ $json.postcode }}",
+              "type": "string"
+            },
+            {
+              "id": "register-outcome",
+              "name": "outcome",
+              "value": "={{ $json.outcome }}",
+              "type": "string"
+            },
+            {
+              "id": "register-state",
+              "name": "terminal_state",
+              "value": "={{ $json.terminal_state }}",
+              "type": "string"
+            },
+            {
+              "id": "register-source",
+              "name": "source",
+              "value": "={{ $json.source }}",
+              "type": "string"
+            },
+            {
+              "id": "register-key",
+              "name": "duplicate_key",
+              "value": "={{ $json.duplicate_key }}",
+              "type": "string"
+            },
+            {
+              "id": "register-review",
+              "name": "review_reason",
+              "value": "={{ $json.review_reason }}",
+              "type": "string"
+            },
+            {
+              "id": "register-external",
+              "name": "external_actions_performed",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
       }
     },
     {
-      "id": "prepare-crm",
-      "name": "Prepare CRM Record",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "id": "store-register-row",
+      "name": "Store Enquiry Outcome",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
       "position": [
-        840,
-        260
+        1060,
+        80
       ],
       "parameters": {
-        "jsCode": "return $input.all().map(item => ({ json: { ...item.json, review_reason: null, crm_action: 'prepare_create', crm_record: { external_id: item.json.event_id, contact_name: `${item.json.first_name} ${item.json.last_name}`.trim(), email: item.json.email, phone: item.json.phone, service: item.json.service, source: item.json.source }, external_actions_performed: false } }));"
-      }
-    },
-    {
-      "id": "propose-booking",
-      "name": "Propose Booking",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1100,
-        260
-      ],
-      "parameters": {
-        "jsCode": "return $input.all().map(item => ({ json: { ...item.json, booking_action: 'prepare_proposal', booking_proposal: { requested_date: item.json.preferred_date || null, status: 'awaiting_human_confirmation' }, external_actions_performed: false } }));"
-      }
-    },
-    {
-      "id": "prepare-acknowledgement",
-      "name": "Prepare Acknowledgement",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1360,
-        260
-      ],
-      "parameters": {
-        "jsCode": "return $input.all().map(item => ({ json: { ...item.json, acknowledgement_action: 'preview_only', acknowledgement_preview: `Thanks ${item.json.first_name}. Your ${item.json.service} enquiry has been received for review.`, retry_allowed: false, terminal_state: 'prepared_for_human_confirmation', external_actions_performed: false } }));"
-      }
-    },
-    {
-      "id": "audit-outcome",
-      "name": "Audit Outcome",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1640,
-        0
-      ],
-      "parameters": {
-        "jsCode": "return $input.all().map(item => ({ json: { ...item.json, audit_event: 'service_lead_outcome_recorded', workflow_active: false, credentials_used: false, external_actions_performed: false } }));"
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "VfbTfZxkJAk3ZxvW",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{ $json.event_id }}",
+            "customer_name": "={{ $json.customer_name }}",
+            "service": "={{ $json.service }}",
+            "postcode": "={{ $json.postcode }}",
+            "outcome": "={{ $json.outcome }}",
+            "terminal_state": "={{ $json.terminal_state }}",
+            "source": "={{ $json.source }}",
+            "duplicate_key": "={{ $json.duplicate_key }}",
+            "review_reason": "={{ $json.review_reason }}",
+            "external_actions_performed": "={{ $json.external_actions_performed }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "optimizeBulk": false
+        }
       }
     }
   ],
   "connections": {
-    "Start Review Run": {
+    "Request a Service Quote": {
       "main": [
         [
           {
-            "node": "Load Lead Batch",
+            "node": "Normalize Intake",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Load Lead Batch": {
+    "Normalize Intake": {
       "main": [
         [
           {
-            "node": "Normalize and Classify",
+            "node": "Valid enquiry?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Receive Service Lead": {
+    "Valid enquiry?": {
       "main": [
         [
           {
-            "node": "Normalize and Classify",
+            "node": "Existing Enquiry?",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "Normalize and Classify": {
-      "main": [
-        [
+          },
           {
-            "node": "Invalid Lead?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Invalid Lead?": {
-      "main": [
-        [
-          {
-            "node": "Record Invalid Lead",
+            "node": "New Enquiry?",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Duplicate Lead?",
+            "node": "Reject Incomplete Enquiry",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Duplicate Lead?": {
+    "Existing Enquiry?": {
       "main": [
         [
           {
-            "node": "Record Duplicate",
+            "node": "Stop Duplicate",
             "type": "main",
             "index": 0
           }
-        ],
+        ]
+      ]
+    },
+    "New Enquiry?": {
+      "main": [
         [
           {
             "node": "Human Review?",
@@ -335,69 +924,47 @@
         ],
         [
           {
-            "node": "Integration Exception?",
+            "node": "Integration Hold?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Integration Exception?": {
+    "Integration Hold?": {
       "main": [
         [
           {
-            "node": "Record Integration Exception",
+            "node": "Hold Integration Exception",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Prepare CRM Record",
+            "node": "Prepare Controlled Handoff",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Prepare CRM Record": {
+    "Reject Incomplete Enquiry": {
       "main": [
         [
           {
-            "node": "Propose Booking",
+            "node": "Prepare Register Row",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Propose Booking": {
+    "Stop Duplicate": {
       "main": [
         [
           {
-            "node": "Prepare Acknowledgement",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Record Invalid Lead": {
-      "main": [
-        [
-          {
-            "node": "Audit Outcome",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Record Duplicate": {
-      "main": [
-        [
-          {
-            "node": "Audit Outcome",
+            "node": "Prepare Register Row",
             "type": "main",
             "index": 0
           }
@@ -408,47 +975,72 @@
       "main": [
         [
           {
-            "node": "Audit Outcome",
+            "node": "Prepare Register Row",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Review Service Enquiry",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Record Integration Exception": {
+    "Review Service Enquiry": {
       "main": [
         [
           {
-            "node": "Audit Outcome",
+            "node": "Apply Review Decision",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Prepare Acknowledgement": {
+    "Apply Review Decision": {
       "main": [
         [
           {
-            "node": "Audit Outcome",
+            "node": "Update Review Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hold Integration Exception": {
+      "main": [
+        [
+          {
+            "node": "Prepare Register Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Controlled Handoff": {
+      "main": [
+        [
+          {
+            "node": "Prepare Register Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Register Row": {
+      "main": [
+        [
+          {
+            "node": "Store Enquiry Outcome",
             "type": "main",
             "index": 0
           }
         ]
       ]
     }
-  },
-  "settings": {
-    "executionOrder": "v1"
-  },
-  "staticData": {
-    "activation_mode": "inactive_fixture_first",
-    "workflow_activation_blocked": true,
-    "external_actions_blocked": true,
-    "email_sends_blocked": true,
-    "sms_sends_blocked": true,
-    "crm_writes_blocked": true,
-    "calendar_writes_blocked": true
-  },
-  "pinData": {}
+  }
 }

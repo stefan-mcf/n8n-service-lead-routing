@@ -1,0 +1,610 @@
+{
+  "name": "Service Lead Routing QA",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "proof_mode": "inactive_synthetic_v2",
+    "workflow_activation_blocked": true,
+    "external_actions_blocked": true,
+    "data_table_scope": "local_synthetic_only"
+  },
+  "pinData": {},
+  "nodes": [
+    {
+      "id": "qa-note",
+      "name": "Five controlled outcomes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1060,
+        -390
+      ],
+      "parameters": {
+        "content": "## FIVE CONTROLLED OUTCOMES\nAccepted, duplicate, invalid, human review, and integration exception — all synthetic and all externally inert.",
+        "height": 690,
+        "width": 2160,
+        "color": 5
+      }
+    },
+    {
+      "id": "manual-trigger",
+      "name": "Start QA Review",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -980,
+        -40
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "load-scenarios",
+      "name": "Load Five Scenarios",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -760,
+        -40
+      ],
+      "parameters": {
+        "jsCode": "return [\n  { json: { event_id: 'LEAD-1001', customer_name: 'Ava Nguyen', email: 'ava@example.test', phone: '0400 111 222', service: 'roof inspection', postcode: '3070', preferred_date: '2026-08-04', consent_to_contact: true, source: 'website_quote_form' } },\n  { json: { event_id: 'LEAD-1002', customer_name: 'Ava Nguyen', email: 'AVA@example.test', phone: '0400 111 222', service: 'roof inspection', postcode: '3070', preferred_date: '2026-08-04', consent_to_contact: true, source: 'website_quote_form' } },\n  { json: { event_id: 'LEAD-1003', customer_name: 'Noah Patel', email: '', phone: '', service: 'deck repair', postcode: '3216', preferred_date: '2026-08-06', consent_to_contact: false, source: 'website_quote_form' } },\n  { json: { event_id: 'LEAD-1004', customer_name: 'Mia Jones', email: '', phone: '0412 333 444', service: 'electrical / regulated trade', postcode: '3550', preferred_date: '', consent_to_contact: true, source: 'phone_intake', human_review_required: true } },\n  { json: { event_id: 'LEAD-1005', customer_name: 'Leo Martin', email: 'leo@example.test', phone: '', service: 'gutter replacement', postcode: '3350', preferred_date: '2026-08-08', consent_to_contact: true, source: 'partner_referral', simulate_adapter_failure: true } }\n];"
+      }
+    },
+    {
+      "id": "normalize-classify",
+      "name": "Normalize and Classify",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -520,
+        -40
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const input = $input.all();\nconst seen = new Set();\nreturn input.map((item) => {\n  const raw = item.json;\n  const text = (value) => String(value ?? '').trim();\n  const email = text(raw.email).toLowerCase();\n  const phone = text(raw.phone).replace(/\\D/g, '');\n  const service = text(raw.service).toLowerCase();\n  const contactKey = email || phone || 'no-contact';\n  const duplicateKey = `${contactKey}|${service || 'no-service'}`;\n  const errors = [];\n  if (!text(raw.event_id)) errors.push('event_id_required');\n  if (!text(raw.customer_name)) errors.push('customer_name_required');\n  if (!email && !phone) errors.push('email_or_phone_required');\n  if (!service) errors.push('service_required');\n  if (!text(raw.postcode)) errors.push('postcode_required');\n  if (!Boolean(raw.consent_to_contact)) errors.push('contact_consent_required');\n  let outcome;\n  if (errors.length) outcome = 'invalid';\n  else if (seen.has(duplicateKey)) outcome = 'duplicate';\n  else {\n    seen.add(duplicateKey);\n    if (Boolean(raw.human_review_required)) outcome = 'human_review';\n    else if (Boolean(raw.simulate_adapter_failure)) outcome = 'integration_exception';\n    else outcome = 'accepted';\n  }\n  return { json: {\n    ...raw,\n    email,\n    phone,\n    service,\n    duplicate_key: duplicateKey,\n    errors,\n    outcome,\n    is_invalid: outcome === 'invalid',\n    is_duplicate: outcome === 'duplicate',\n    needs_human_review: outcome === 'human_review',\n    has_integration_exception: outcome === 'integration_exception',\n    external_actions_performed: false\n  } };\n});"
+      }
+    },
+    {
+      "id": "invalid-router",
+      "name": "Invalid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -280,
+        -40
+      ],
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.is_invalid }}",
+              "value2": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "mark-invalid",
+      "name": "Mark Invalid",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -20,
+        -280
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "qa-invalid-state",
+              "name": "terminal_state",
+              "value": "rejected",
+              "type": "string"
+            },
+            {
+              "id": "qa-invalid-reason",
+              "name": "review_reason",
+              "value": "={{ $json.errors.join(', ') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "duplicate-router",
+      "name": "Duplicate?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -20,
+        -40
+      ],
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.is_duplicate }}",
+              "value2": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "mark-duplicate",
+      "name": "Stop Duplicate",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        -220
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "qa-duplicate-state",
+              "name": "terminal_state",
+              "value": "duplicate_stopped",
+              "type": "string"
+            },
+            {
+              "id": "qa-duplicate-reason",
+              "name": "review_reason",
+              "value": "Matching contact and service stopped before handoff.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "review-router",
+      "name": "Human Review?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        240,
+        -20
+      ],
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.needs_human_review }}",
+              "value2": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "mark-review",
+      "name": "Queue Human Review",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        500,
+        -140
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "qa-review-state",
+              "name": "terminal_state",
+              "value": "review_hold",
+              "type": "string"
+            },
+            {
+              "id": "qa-review-reason",
+              "name": "review_reason",
+              "value": "Confirm regulated-trade scope and scheduling requirements.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "exception-router",
+      "name": "Integration Hold?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        500,
+        80
+      ],
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.has_integration_exception }}",
+              "value2": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "mark-exception",
+      "name": "Hold Exception",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        760,
+        -20
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "qa-exception-state",
+              "name": "terminal_state",
+              "value": "exception_hold",
+              "type": "string"
+            },
+            {
+              "id": "qa-exception-reason",
+              "name": "review_reason",
+              "value": "Destination adapter unavailable. Review before retry.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "mark-accepted",
+      "name": "Prepare Handoff",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        760,
+        160
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "qa-accepted-state",
+              "name": "terminal_state",
+              "value": "prepared_for_human_confirmation",
+              "type": "string"
+            },
+            {
+              "id": "qa-accepted-reason",
+              "name": "review_reason",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "qa-crm-preview",
+              "name": "crm_action",
+              "value": "prepare_create",
+              "type": "string"
+            },
+            {
+              "id": "qa-booking-preview",
+              "name": "booking_action",
+              "value": "prepare_proposal",
+              "type": "string"
+            },
+            {
+              "id": "qa-ack-preview",
+              "name": "acknowledgement_action",
+              "value": "preview_only",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "prepare-register",
+      "name": "Prepare Register Rows",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1020,
+        -40
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "qa-register-event",
+              "name": "event_id",
+              "value": "={{ $json.event_id }}",
+              "type": "string"
+            },
+            {
+              "id": "qa-register-name",
+              "name": "customer_name",
+              "value": "={{ $json.customer_name }}",
+              "type": "string"
+            },
+            {
+              "id": "qa-register-service",
+              "name": "service",
+              "value": "={{ $json.service }}",
+              "type": "string"
+            },
+            {
+              "id": "qa-register-postcode",
+              "name": "postcode",
+              "value": "={{ $json.postcode }}",
+              "type": "string"
+            },
+            {
+              "id": "qa-register-outcome",
+              "name": "outcome",
+              "value": "={{ $json.outcome }}",
+              "type": "string"
+            },
+            {
+              "id": "qa-register-state",
+              "name": "terminal_state",
+              "value": "={{ $json.terminal_state }}",
+              "type": "string"
+            },
+            {
+              "id": "qa-register-source",
+              "name": "source",
+              "value": "={{ $json.source }}",
+              "type": "string"
+            },
+            {
+              "id": "qa-register-key",
+              "name": "duplicate_key",
+              "value": "={{ $json.duplicate_key }}",
+              "type": "string"
+            },
+            {
+              "id": "qa-register-review",
+              "name": "review_reason",
+              "value": "={{ $json.review_reason }}",
+              "type": "string"
+            },
+            {
+              "id": "qa-register-external",
+              "name": "external_actions_performed",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "store-outcomes",
+      "name": "Store Five Outcomes",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1280,
+        -40
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "VfbTfZxkJAk3ZxvW",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{ $json.event_id }}",
+            "customer_name": "={{ $json.customer_name }}",
+            "service": "={{ $json.service }}",
+            "postcode": "={{ $json.postcode }}",
+            "outcome": "={{ $json.outcome }}",
+            "terminal_state": "={{ $json.terminal_state }}",
+            "source": "={{ $json.source }}",
+            "duplicate_key": "={{ $json.duplicate_key }}",
+            "review_reason": "={{ $json.review_reason }}",
+            "external_actions_performed": "={{ $json.external_actions_performed }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "optimizeBulk": false
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Start QA Review": {
+      "main": [
+        [
+          {
+            "node": "Load Five Scenarios",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Five Scenarios": {
+      "main": [
+        [
+          {
+            "node": "Normalize and Classify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize and Classify": {
+      "main": [
+        [
+          {
+            "node": "Invalid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invalid?": {
+      "main": [
+        [
+          {
+            "node": "Mark Invalid",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Duplicate?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Duplicate?": {
+      "main": [
+        [
+          {
+            "node": "Stop Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Human Review?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Human Review?": {
+      "main": [
+        [
+          {
+            "node": "Queue Human Review",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Integration Hold?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Integration Hold?": {
+      "main": [
+        [
+          {
+            "node": "Hold Exception",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Invalid": {
+      "main": [
+        [
+          {
+            "node": "Prepare Register Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stop Duplicate": {
+      "main": [
+        [
+          {
+            "node": "Prepare Register Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Queue Human Review": {
+      "main": [
+        [
+          {
+            "node": "Prepare Register Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hold Exception": {
+      "main": [
+        [
+          {
+            "node": "Prepare Register Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Handoff": {
+      "main": [
+        [
+          {
+            "node": "Prepare Register Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Register Rows": {
+      "main": [
+        [
+          {
+            "node": "Store Five Outcomes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
