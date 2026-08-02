@@ -1,0 +1,45 @@
+{
+  "name": "Service Enquiry Register",
+  "columns": [
+    {
+      "name": "event_id",
+      "type": "string"
+    },
+    {
+      "name": "customer_name",
+      "type": "string"
+    },
+    {
+      "name": "service",
+      "type": "string"
+    },
+    {
+      "name": "postcode",
+      "type": "string"
+    },
+    {
+      "name": "outcome",
+      "type": "string"
+    },
+    {
+      "name": "terminal_state",
+      "type": "string"
+    },
+    {
+      "name": "source",
+      "type": "string"
+    },
+    {
+      "name": "duplicate_key",
+      "type": "string"
+    },
+    {
+      "name": "review_reason",
+      "type": "string"
+    },
+    {
+      "name": "external_actions_performed",
+      "type": "boolean"
+    }
+  ]
+}
