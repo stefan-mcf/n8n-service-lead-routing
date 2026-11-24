@@ -8,9 +8,13 @@ outcomes.
 
 **My contribution:** Workflow design, form intake, routing controls, QA scenarios, and operator handoff.
 
-![Customer-facing service enquiry form](assets/customer-intake.png)
+## Five enquiries, one prepared handoff
 
-*Retained project view. The [evidence index](docs/evidence.md) contains the full published sequence and its historical context.*
+The [committed expected output](fixtures/expected-output.json) records five synthetic enquiries. One prepared CRM and booking actions for review. The others were stopped as duplicate, invalid, held for human review or held after a destination failure. All five recorded zero external actions.
+
+![Operator register with five controlled synthetic enquiry outcomes](assets/operator-register.png)
+
+*Retained operator register from the isolated n8n 2.31.6 run. Both public workflows remain inactive. The [intake form](assets/customer-intake.png) and [provider evidence](docs/evidence.md) are also available.*
 
 ## How it works
 
@@ -30,16 +34,6 @@ one of five explicit outcomes before any external handoff is prepared.
 
 Every outcome is written to the local `Service Enquiry Register` with
 `external_actions_performed: false`.
-
-### Included scenarios
-
-The committed fixture covers:
-
-- an accepted website enquiry;
-- a duplicate submission with case-normalised email;
-- missing contact method and consent;
-- a complete enquiry requiring human review;
-- a simulated destination-adapter failure.
 
 The expected output records correlation IDs, duplicate keys, route decisions,
 prepared actions, and whether any external action occurred.
